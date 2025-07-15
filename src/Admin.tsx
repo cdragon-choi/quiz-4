@@ -7,10 +7,16 @@ type Entry = {
   score: number;
 };
 
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
+
 export default function Admin() {
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [input, setInput] = useState('');
 
   useEffect(() => {
+    if (!authenticated) return;
+
     const responsesRef = ref(db, 'responses');
     onValue(responsesRef, (snapshot) => {
       const data = snapshot.val();
@@ -18,15 +24,39 @@ export default function Admin() {
 
       for (const id in data) {
         const entry = data[id];
-        if (entry && typeof entry.score === 'number') {
-          list.push({ id, score: entry.score });
+        const score = Number(entry?.score);
+        if (!isNaN(score)) {
+          list.push({ id, score });
         }
       }
 
       list.sort((a, b) => b.score - a.score);
       setEntries(list);
     });
-  }, []);
+  }, [authenticated]);
+
+  if (!authenticated) {
+    return (
+      <div style={{ padding: 20 }}>
+        <h2>🔐 관리자 로그인</h2>
+        <input
+          type="password"
+          placeholder="비밀번호 입력"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+        />
+        <button onClick={() => {
+          if (input === ADMIN_PASSWORD) {
+            setAuthenticated(true);
+          } else {
+            alert("비밀번호가 틀렸습니다.");
+          }
+        }}>
+          로그인
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: 20 }}>
