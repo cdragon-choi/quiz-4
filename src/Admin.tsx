@@ -106,6 +106,11 @@ export default function Admin() {
         <button onClick={() => setQuizState({ status: 'started', currentQuestion: 0 })}>
           퀴즈 시작
         </button>{' '}
+        {questionIndex < QUESTIONS.length - 1 && (
+          <button onClick={() => setQuizState({ status: 'started', currentQuestion: questionIndex + 1 })}>
+            다음 문제
+          </button>
+        )}{' '}
         <button onClick={() => setQuizState({ status: 'started', currentQuestion: questionIndex + 1 })}>
           다음 문제
         </button>{' '}
