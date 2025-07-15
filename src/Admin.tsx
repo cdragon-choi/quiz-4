@@ -1,29 +1,32 @@
+// src/Admin.tsx
 import { useEffect, useState } from 'react';
 import {
   db,
   setQuizState,
   deleteResponse,
   subscribeToWaitingParticipants,
-  subscribeToSubmissions,
+  subscribeToSubmissions
 } from './firebase';
 import { onValue, ref } from 'firebase/database';
+
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
 
 type Entry = {
   id: string;
   score: number;
 };
 
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
-
 export default function Admin() {
-  const [entries, setEntries] = useState<Entry[]>([]);
   const [authenticated, setAuthenticated] = useState(false);
   const [input, setInput] = useState('');
+
+  const [entries, setEntries] = useState<Entry[]>([]);
   const [status, setStatus] = useState('idle');
   const [questionIndex, setQuestionIndex] = useState(0);
   const [waitingIds, setWaitingIds] = useState<string[]>([]);
   const [submittedIds, setSubmittedIds] = useState<string[]>([]);
 
+  // 리더보드 및 상태 구독
   useEffect(() => {
     if (!authenticated) return;
 
@@ -53,12 +56,15 @@ export default function Admin() {
       }
     });
 
-    const unsubWait = subscribeToWaitingParticipants(setWaitingIds);
-    const unsubSub = subscribeToSubmissions(questionIndex, setSubmittedIds);
+    // 대기자 실시간 구독
+    const unsub1 = subscribeToWaitingParticipants(setWaitingIds);
+
+    // 현재 문제 제출자 실시간 구독
+    const unsub2 = subscribeToSubmissions(questionIndex, setSubmittedIds);
 
     return () => {
-      unsubWait();
-      unsubSub();
+      unsub1();
+      unsub2();
     };
   }, [authenticated, questionIndex]);
 
@@ -108,17 +114,17 @@ export default function Admin() {
         </button>
       </div>
 
-      <h3>🟦 대기 중 참가자 ({waitingIds.length})</h3>
+      <h3>🧍 대기 중 참가자 ({waitingIds.length}명)</h3>
       <ul>
         {waitingIds.map(id => <li key={id}>{id}</li>)}
       </ul>
 
-      <h3>🟩 현재 문제 제출자 ({submittedIds.length})</h3>
+      <h3>📤 현재 문제 제출자 ({submittedIds.length}명)</h3>
       <ul>
         {submittedIds.map(id => <li key={id}>{id}</li>)}
       </ul>
 
-      <h3>🏆 최종 제출 점수</h3>
+      <h3>🏆 리더보드</h3>
       {entries.length === 0 ? (
         <p>아직 제출된 응답이 없습니다.</p>
       ) : (
