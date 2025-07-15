@@ -1,23 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { QUESTIONS } from './questions';
 import {
-  saveResponse,
   checkIdExists,
   subscribeToQuizState,
   addWaitingParticipant,
   markSubmission,
+  submitAnswerAndScore,
 } from './firebase';
 import Admin from './Admin';
-
-function calculateScore(answers: Record<string, string>) {
-  return QUESTIONS.reduce((total, q) => {
-    const given = answers[q.id];
-    if (String(q.answer) === given) {
-      return total + q.score;
-    }
-    return total;
-  }, 0);
-}
 
 export default function App() {
   if (window.location.pathname === '/admin') return <Admin />;
@@ -28,7 +18,7 @@ export default function App() {
   const [existingScore, setExistingScore] = useState<number | null>(null);
   const [status, setStatus] = useState<'idle' | 'started' | 'finished'>('idle');
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<{ [key: string]: string }>({});
+  const [selected, setSelected] = useState<string | null>(null);
   const [submittedQuestions, setSubmittedQuestions] = useState<Set<number>>(new Set());
 
   // 실시간 퀴즈 상태 반영
@@ -37,6 +27,7 @@ export default function App() {
       if (state) {
         setStatus(state.status);
         setCurrentQuestion(state.currentQuestion);
+        setSelected(null);
       }
     });
     return () => unsubscribe();
@@ -55,17 +46,15 @@ export default function App() {
     }
   };
 
-  // 기존 응답자면 점수만 표시
   if (isExisting) {
     return (
       <div style={{ padding: 20 }}>
         <h1>2025 R2 SmartThings 퀴즈</h1>
-        <p>✅ 이미 제출하셨습니다. 점수: <b>{existingScore}</b>점</p>
+        <p>:white_check_mark: 이미 제출하셨습니다. 점수: <b>{existingScore}</b>점</p>
       </div>
     );
   }
 
-  // 아직 ID 입력 전
   if (!idConfirmed) {
     return (
       <div style={{ padding: 20 }}>
@@ -77,18 +66,16 @@ export default function App() {
     );
   }
 
-  // 대기 중
   if (status === 'idle') {
     return (
       <div style={{ padding: 20 }}>
-        <h1>⏳ 퀴즈 대기 중</h1>
+        <h1>:hourglass_flowing_sand: 퀴즈 대기 중</h1>
         <p>ID: <b>{id}</b></p>
         <p>관리자가 퀴즈를 시작할 때까지 기다려주세요.</p>
       </div>
     );
   }
 
-  // 퀴즈 종료됨
   if (status === 'finished') {
     return (
       <div style={{ padding: 20 }}>
@@ -98,9 +85,8 @@ export default function App() {
     );
   }
 
-  // 퀴즈 진행 중
+  // 진행 중인 문제
   const q = QUESTIONS[currentQuestion];
-  const selected = answers[q.id];
   const hasSubmitted = submittedQuestions.has(currentQuestion);
 
   return (
@@ -117,7 +103,7 @@ export default function App() {
               name={q.id}
               value={String(idx)}
               checked={selected === String(idx)}
-              onChange={() => setAnswers({ ...answers, [q.id]: String(idx) })}
+              onChange={() => setSelected(String(idx))}
               disabled={hasSubmitted}
             />
             {opt}
@@ -133,20 +119,12 @@ export default function App() {
               return;
             }
 
-            const isCorrect = String(q.answer) === selected;
-
-            // 제출 처리
-            const updatedAnswers = { ...answers, [q.id]: selected };
-            setAnswers(updatedAnswers);
-
-            const newSubmitted = new Set(submittedQuestions).add(currentQuestion);
-            setSubmittedQuestions(newSubmitted);
-
-            await markSubmission(id, currentQuestion, isCorrect);
+            // 서버에 제출
+            await markSubmission(id, currentQuestion, selected);
+            setSubmittedQuestions(new Set(submittedQuestions).add(currentQuestion));
 
             if (currentQuestion === QUESTIONS.length - 1) {
-              const score = calculateScore(updatedAnswers);
-              await saveResponse(id, { answers: updatedAnswers, score });
+              const score = await submitAnswerAndScore(id);
               setExistingScore(score);
               alert(`제출 완료! 당신의 점수는 ${score}점입니다.`);
               setIsExisting(true);
@@ -159,7 +137,7 @@ export default function App() {
         </button>
       )}
 
-      {hasSubmitted && <p style={{ color: 'green' }}>✅ 제출 완료</p>}
+      {hasSubmitted && <p style={{ color: 'green' }}>:white_check_mark: 제출 완료</p>}
     </div>
   );
 }
