@@ -66,7 +66,6 @@ export default function App() {
       >
         제출
       </button>
-      <button onClick={() => window.location.href = '/admin'}>관리자 보기</button>
     </div>
   );
 }
