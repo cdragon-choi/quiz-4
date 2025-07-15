@@ -22,6 +22,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
 
+// :white_check_mark: 정답 저장 (Admin용)
+export const setCorrectAnswers = async (answers: Record<string, string>) => {
+  return set(ref(db, "correctAnswers"), answers);
+};
+
+// :white_check_mark: 정답 로딩
+export const getCorrectAnswers = async (): Promise<Record<string, string>> => {
+  const snap = await get(ref(db, "correctAnswers"));
+  return snap.val() || {};
+};
+
 // :white_check_mark: ID 존재 여부 확인
 export const checkIdExists = async (id: string) => {
   const snapshot = await get(ref(db, "responses/" + id));
@@ -89,13 +100,15 @@ export const subscribeToSubmissions = (
 
 // :brain: 점수 계산 및 저장
 export const submitAnswerAndScore = async (id: string): Promise<number> => {
+  const correctAnswers = await getCorrectAnswers();
   let score = 0;
 
   for (let i = 0; i < QUESTIONS.length; i++) {
     const q = QUESTIONS[i];
+    const qid = q.id;
     const snap = await get(ref(db, `submissions/${i}/${id}`));
-    const answer = snap.val()?.selected;
-    if (answer !== undefined && String(q.answer) === String(answer)) {
+    const selected = snap.val()?.selected;
+    if (selected !== undefined && String(correctAnswers[qid]) === String(selected)) {
       score += q.score;
     }
   }
@@ -112,14 +125,17 @@ export const submitAnswerAndScore = async (id: string): Promise<number> => {
 export const getAccuracyStats = async (): Promise<
   { qIndex: number; total: number; correct: number; rate: number }[]
 > => {
+  const correctAnswers = await getCorrectAnswers();
   const results = [];
 
   for (let i = 0; i < QUESTIONS.length; i++) {
+    const q = QUESTIONS[i];
+    const qid = q.id;
     const snap = await get(ref(db, `submissions/${i}`));
     const data = snap.val() || {};
     const ids = Object.keys(data);
     const total = ids.length;
-    const correct = ids.filter((id) => String(data[id]?.selected) === String(QUESTIONS[i].answer)).length;
+    const correct = ids.filter((id) => String(data[id]?.selected) === String(correctAnswers[qid])).length;
     const rate = total === 0 ? 0 : Math.round((correct / total) * 100);
     results.push({ qIndex: i, total, correct, rate });
   }
@@ -132,9 +148,15 @@ export const deleteResponse = (id: string) => {
   return remove(ref(db, "responses/" + id));
 };
 
-// :fire: 전체 데이터 초기화
+// :fire: 전체 초기화
 export const resetAllData = async () => {
-  const paths = ['responses', 'waitingParticipants', 'submissions', 'quizState'];
+  const paths = [
+    "responses",
+    "waitingParticipants",
+    "submissions",
+    "quizState",
+    "correctAnswers"
+  ];
   const promises = paths.map((path) => remove(ref(db, path)));
   return Promise.all(promises);
 };
