@@ -117,6 +117,19 @@ export default function Admin() {
         <button onClick={() => setQuizState({ status: 'finished', currentQuestion: questionIndex })}>
           퀴즈 종료
         </button>
+        <button
+          style={{ marginLeft: 20, color: 'red' }}
+          onClick={() => {
+            if (confirm("⚠️ 모든 데이터를 초기화할까요? 이 작업은 되돌릴 수 없습니다.")) {
+              resetAllData().then(() => {
+                alert("초기화 완료!");
+                window.location.reload();
+              }).catch(err => alert("초기화 실패: " + err.message));
+            }
+          }}
+        >
+          🔥 전체 초기화
+        </button>
       </div>
 
       <h3>🧍 대기 중 참가자 ({waitingIds.length}명)</h3>
