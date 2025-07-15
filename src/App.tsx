@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { QUESTIONS } from './questions';
+import { saveResponse } from './firebase';
 
 export default function App() {
   const [id, setId] = useState('');
@@ -37,7 +38,14 @@ export default function App() {
           ))}
         </div>
       ))}
-      <button onClick={() => console.log('제출:', { id, answers })}>
+      <button
+        onClick={() => {
+          if (!id) return alert('ID가 없습니다');
+          saveResponse(id, answers)
+            .then(() => alert('응답이 저장되었습니다!'))
+            .catch((err) => alert('저장 실패: ' + err.message));
+        }}
+      >
         제출
       </button>
     </div>
