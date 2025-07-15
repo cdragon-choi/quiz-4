@@ -1,5 +1,6 @@
+// src/firebase.ts
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set } from "firebase/database";
+import { getDatabase, ref, set, get, remove } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,6 +14,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
+
+// 🔐 응답 저장
 export const saveResponse = (
   id: string,
   { answers, score }: { answers: any; score: number }
@@ -22,4 +25,16 @@ export const saveResponse = (
     answers,
     score,
   });
+};
+
+// ✅ ID 존재 여부 확인
+export const checkIdExists = async (id: string) => {
+  const snapshot = await get(ref(db, 'responses/' + id));
+  if (!snapshot.exists()) return null;
+  return snapshot.val(); // score 등 포함된 데이터 반환
+};
+
+// 🛠 관리자 전용: 응답 삭제 (재응답 허용)
+export const deleteResponse = (id: string) => {
+  return remove(ref(db, 'responses/' + id));
 };
