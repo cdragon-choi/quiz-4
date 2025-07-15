@@ -12,22 +12,28 @@ import Admin from './Admin';
 function calculateScore(answers: Record<string, string>) {
   return QUESTIONS.reduce((total, q) => {
     const given = answers[q.id];
-    return String(q.answer) === given ? total + q.score : total;
+    if (String(q.answer) === given) {
+      return total + q.score;
+    }
+    return total;
   }, 0);
 }
 
 export default function App() {
+  // 관리자 모드
   if (window.location.pathname === '/admin') return <Admin />;
 
+  // 상태
   const [id, setId] = useState('');
-  const [answers, setAnswers] = useState<{ [key: string]: string }>({});
+  const [idConfirmed, setIdConfirmed] = useState(false);
   const [existingScore, setExistingScore] = useState<number | null>(null);
+  const [answers, setAnswers] = useState<{ [key: string]: string }>({});
+  const [submittedQuestions, setSubmittedQuestions] = useState<Set<number>>(new Set());
+
   const [status, setStatus] = useState<'idle' | 'started' | 'finished'>('idle');
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [submittedQuestions, setSubmittedQuestions] = useState<Set<number>>(new Set());
-  const [idConfirmed, setIdConfirmed] = useState(false);
 
-  // 퀴즈 상태 실시간 구독
+  // 실시간 퀴즈 상태 구독
   useEffect(() => {
     const unsubscribe = subscribeToQuizState((state) => {
       if (state) {
@@ -38,58 +44,60 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // ID 확인 및 대기자 등록
+  // ID 입력 확인 및 등록
   const handleIdCheck = async () => {
-    if (!id) return alert('ID를 입력하세요');
+    if (!id) return alert("ID를 입력하세요");
 
     const result = await checkIdExists(id);
     if (result) {
       setExistingScore(result.score ?? 0);
-      setIdConfirmed(true);
+      setIdConfirmed(false); // ❗ 기존 응답자: 퀴즈 진입 차단
     } else {
       await addWaitingParticipant(id);
-      alert('참가 등록 완료! 퀴즈가 시작되기를 기다려주세요.');
+      alert("참가 등록 완료! 퀴즈가 시작되기를 기다려주세요.");
       setIdConfirmed(true);
     }
   };
 
-  // === 상태: 퀴즈 시작 전 ===
+  // 이미 제출한 경우: 무조건 점수만 표시
+  if (existingScore !== null) {
+    return (
+      <div style={{ padding: 20 }}>
+        <h1>2025 R2 SmartThings 퀴즈</h1>
+        <p>✅ 이미 제출하셨습니다. 점수: <b>{existingScore}</b>점</p>
+      </div>
+    );
+  }
+
+  // 퀴즈 대기 상태
   if (status === 'idle') {
     return (
       <div style={{ padding: 20 }}>
         <h1>2025 R2 SmartThings 퀴즈</h1>
-        <p>사내 고유 ID를 입력하고 대기하세요. 관리자가 퀴즈를 시작하면 자동으로 시작됩니다.</p>
+        <p>사내 고유 ID를 입력하고 대기하세요. 관리자가 시작하면 자동 진행됩니다.</p>
         <input value={id} onChange={e => setId(e.target.value)} disabled={idConfirmed} />
         <button onClick={handleIdCheck} disabled={idConfirmed}>확인</button>
-
-        {existingScore !== null && (
-          <p style={{ color: 'green', marginTop: 10 }}>
-            ✅ 이미 제출하셨습니다. 점수: <b>{existingScore}</b>점
+        {idConfirmed && (
+          <p style={{ marginTop: 20, color: 'blue' }}>
+            ⏳ 대기 중입니다. 퀴즈가 곧 시작됩니다.
           </p>
-        )}
-        {idConfirmed && existingScore === null && (
-          <p style={{ color: 'blue', marginTop: 10 }}>⏳ 대기 중입니다. 퀴즈가 곧 시작됩니다.</p>
         )}
       </div>
     );
   }
 
-  // === 상태: 퀴즈 종료 ===
+  // 퀴즈 종료 상태
   if (status === 'finished') {
     return (
       <div style={{ padding: 20 }}>
         <h1>퀴즈 종료</h1>
-        {existingScore !== null ? (
-          <p>✅ 이미 제출 완료. 점수: <b>{existingScore}</b>점</p>
-        ) : (
-          <p>아직 응답하지 않으셨습니다.</p>
-        )}
+        <p>아직 응답하지 않으셨습니다.</p>
       </div>
     );
   }
 
-  // === 상태: 퀴즈 시작됨 ===
-  if (!id) {
+  // 퀴즈 진행 중인데 아직 ID 인증 안 됨
+  if (!id || !idConfirmed) {
     return (
       <div style={{ padding: 20 }}>
         <h1>2025 R2 SmartThings 퀴즈</h1>
@@ -100,16 +108,7 @@ export default function App() {
     );
   }
 
-  if (existingScore !== null) {
-    return (
-      <div style={{ padding: 20 }}>
-        <h1>2025 R2 SmartThings 퀴즈</h1>
-        <p>✅ 이미 제출하셨습니다. 점수: <b>{existingScore}</b>점</p>
-      </div>
-    );
-  }
-
-  // === 퀴즈 문제 화면 ===
+  // 퀴즈 풀이 화면
   const q = QUESTIONS[currentQuestion];
   const selected = answers[q.id];
   const hasSubmitted = submittedQuestions.has(currentQuestion);
@@ -152,9 +151,7 @@ export default function App() {
         </button>
       )}
 
-      {hasSubmitted && (
-        <p style={{ color: 'green' }}>✅ 제출 완료</p>
-      )}
+      {hasSubmitted && <p style={{ color: 'green' }}>✅ 제출 완료</p>}
 
       {currentQuestion === QUESTIONS.length - 1 && (
         <button
