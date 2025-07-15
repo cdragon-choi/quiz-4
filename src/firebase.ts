@@ -22,7 +22,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
 
-// 🔐 응답 저장
+// 🔐 점수 저장
 export const saveResponse = (
   id: string,
   { answers, score }: { answers: any; score: number }
@@ -41,12 +41,12 @@ export const checkIdExists = async (id: string) => {
   return snapshot.val();
 };
 
-// 🛠 응답 삭제
+// 🧹 응답 삭제
 export const deleteResponse = (id: string) => {
   return remove(ref(db, "responses/" + id));
 };
 
-// ✅ 퀴즈 상태 변경
+// 🟩 퀴즈 상태 설정
 export const setQuizState = (state: {
   status: "idle" | "started" | "finished";
   currentQuestion: number;
@@ -54,7 +54,7 @@ export const setQuizState = (state: {
   return set(ref(db, "quizState"), state);
 };
 
-// ✅ 퀴즈 상태 구독
+// 📡 퀴즈 상태 실시간 구독
 export const subscribeToQuizState = (
   callback: (state: { status: string; currentQuestion: number }) => void
 ) => {
@@ -64,14 +64,14 @@ export const subscribeToQuizState = (
   });
 };
 
-// ✅ 대기 참가자 등록
+// 📝 대기자 등록
 export const addWaitingParticipant = (id: string) => {
   return set(ref(db, "waitingParticipants/" + id), {
     timestamp: Date.now(),
   });
 };
 
-// ✅ 대기 참가자 구독
+// 👀 대기자 실시간 구독
 export const subscribeToWaitingParticipants = (
   callback: (ids: string[]) => void
 ) => {
@@ -81,14 +81,14 @@ export const subscribeToWaitingParticipants = (
   });
 };
 
-// ✅ 문제별 제출자 기록
+// ✅ 문제별 제출 기록
 export const markSubmission = (id: string, qIndex: number) => {
   return set(ref(db, `submissions/${qIndex}/${id}`), {
     timestamp: Date.now(),
   });
 };
 
-// ✅ 문제별 제출자 구독
+// 👀 문제별 제출자 실시간 구독
 export const subscribeToSubmissions = (
   qIndex: number,
   callback: (ids: string[]) => void
