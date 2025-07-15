@@ -6,6 +6,7 @@ import {
   subscribeToWaitingParticipants,
   subscribeToSubmissions,
   resetAllData,
+  getAccuracyStats,
 } from './firebase';
 import { onValue, ref, get } from 'firebase/database';
 import { QUESTIONS } from './questions';
@@ -17,6 +18,13 @@ type Entry = {
   score: number;
 };
 
+type Accuracy = {
+  qIndex: number;
+  total: number;
+  correct: number;
+  rate: number;
+};
+
 export default function Admin() {
   const [authenticated, setAuthenticated] = useState(false);
   const [input, setInput] = useState('');
@@ -25,6 +33,7 @@ export default function Admin() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [waitingIds, setWaitingIds] = useState<string[]>([]);
   const [submittedIds, setSubmittedIds] = useState<string[]>([]);
+  const [accuracyStats, setAccuracyStats] = useState<Accuracy[]>([]);
 
   useEffect(() => {
     if (!authenticated) return;
@@ -53,6 +62,8 @@ export default function Admin() {
 
     const unsub1 = subscribeToWaitingParticipants(setWaitingIds);
     const unsub2 = subscribeToSubmissions(questionIndex, setSubmittedIds);
+
+    getAccuracyStats().then(setAccuracyStats);
 
     return () => {
       unsub1();
@@ -155,6 +166,28 @@ export default function Admin() {
           🔥 전체 초기화
         </button>
       </div>
+
+      <h3>📊 문제별 정답률</h3>
+      <table border={1} cellPadding={8}>
+        <thead>
+          <tr>
+            <th>문제 번호</th>
+            <th>정답자 수</th>
+            <th>총 제출 수</th>
+            <th>정답률</th>
+          </tr>
+        </thead>
+        <tbody>
+          {accuracyStats.map((s) => (
+            <tr key={s.qIndex}>
+              <td>{s.qIndex + 1}</td>
+              <td>{s.correct}</td>
+              <td>{s.total}</td>
+              <td>{s.rate}%</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
       <h3>🧍 대기 중 참가자 ({waitingIds.length}명)</h3>
       <ul>

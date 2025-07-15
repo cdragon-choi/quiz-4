@@ -55,7 +55,7 @@ export default function App() {
     }
   };
 
-  // 기존 응답자면 항상 점수만 보여줌
+  // 기존 응답자면 점수만 표시
   if (isExisting) {
     return (
       <div style={{ padding: 20 }}>
@@ -98,7 +98,7 @@ export default function App() {
     );
   }
 
-  // 퀴즈 시작됨
+  // 퀴즈 진행 중
   const q = QUESTIONS[currentQuestion];
   const selected = answers[q.id];
   const hasSubmitted = submittedQuestions.has(currentQuestion);
@@ -133,19 +133,23 @@ export default function App() {
               return;
             }
 
-            // 기록
+            const isCorrect = String(q.answer) === selected;
+
+            // 제출 처리
+            const updatedAnswers = { ...answers, [q.id]: selected };
+            setAnswers(updatedAnswers);
+
             const newSubmitted = new Set(submittedQuestions).add(currentQuestion);
             setSubmittedQuestions(newSubmitted);
-            await markSubmission(id, currentQuestion);
 
-            // 마지막 문제 → 점수 저장 및 종료
+            await markSubmission(id, currentQuestion, isCorrect);
+
             if (currentQuestion === QUESTIONS.length - 1) {
-              const updatedAnswers = { ...answers, [q.id]: selected };
               const score = calculateScore(updatedAnswers);
               await saveResponse(id, { answers: updatedAnswers, score });
               setExistingScore(score);
               alert(`제출 완료! 당신의 점수는 ${score}점입니다.`);
-              setIsExisting(true); // 다시 문제 화면 못 보게 함
+              setIsExisting(true);
             } else {
               alert("제출 완료!");
             }
