@@ -2,6 +2,16 @@ import React, { useState } from 'react';
 import { QUESTIONS } from './questions';
 import { saveResponse } from './firebase';
 
+function calculateScore(answers: Record<string, string>) {
+  return QUESTIONS.reduce((total, q) => {
+    const given = answers[q.id];
+    if (String(q.answer) === given) {
+      return total + q.score;
+    }
+    return total;
+  }, 0);
+}
+
 export default function App() {
   const [id, setId] = useState('');
   const [started, setStarted] = useState(false);
@@ -42,8 +52,11 @@ export default function App() {
         onClick={() => {
           console.log("제출");
           if (!id) return alert('ID가 없습니다');
-          saveResponse(id, answers)
-            .then(() => alert('응답이 저장되었습니다!'))
+          const score = calculateScore(answers);
+          saveResponse(id, { answers, score })
+            .then(() => {
+              alert(`제출 완료! 당신의 점수는 ${score}점입니다.`);
+            })
             .catch((err) => alert('저장 실패: ' + err.message));
         }}
       >
