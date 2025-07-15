@@ -1,6 +1,8 @@
 // src/firebase.ts
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set, get, remove } from "firebase/database";
+import {
+  getDatabase, ref, set, get, remove, onValue
+} from "firebase/database";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -37,4 +39,28 @@ export const checkIdExists = async (id: string) => {
 // 🛠 관리자 전용: 응답 삭제 (재응답 허용)
 export const deleteResponse = (id: string) => {
   return remove(ref(db, 'responses/' + id));
+};
+
+//
+// 🔁 실시간 퀴즈 상태 제어
+//
+
+// ✅ 관리자용: 퀴즈 상태 업데이트
+export const setQuizState = (state: {
+  status: 'idle' | 'started' | 'finished',
+  currentQuestion: number
+}) => {
+  return set(ref(db, 'quizState'), state);
+};
+
+// ✅ 참가자용: 퀴즈 상태 실시간 구독
+export const subscribeToQuizState = (callback: (state: {
+  status: string,
+  currentQuestion: number
+}) => void) => {
+  const quizRef = ref(db, 'quizState');
+  return onValue(quizRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) callback(data);
+  });
 };
