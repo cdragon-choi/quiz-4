@@ -1,15 +1,14 @@
-// src/Admin.tsx
 import { useEffect, useState } from 'react';
 import {
   db,
   setQuizState,
   deleteResponse,
   subscribeToWaitingParticipants,
-  subscribeToSubmissions
+  subscribeToSubmissions,
+  resetAllData,
 } from './firebase';
-import { onValue, ref } from 'firebase/database';
+import { onValue, ref, get } from 'firebase/database';
 import { QUESTIONS } from './questions';
-import { resetAllData } from './firebase';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
 
@@ -21,14 +20,12 @@ type Entry = {
 export default function Admin() {
   const [authenticated, setAuthenticated] = useState(false);
   const [input, setInput] = useState('');
-
   const [entries, setEntries] = useState<Entry[]>([]);
   const [status, setStatus] = useState('idle');
   const [questionIndex, setQuestionIndex] = useState(0);
   const [waitingIds, setWaitingIds] = useState<string[]>([]);
   const [submittedIds, setSubmittedIds] = useState<string[]>([]);
 
-  // 리더보드 및 상태 구독
   useEffect(() => {
     if (!authenticated) return;
 
@@ -36,15 +33,11 @@ export default function Admin() {
     onValue(responsesRef, (snapshot) => {
       const data = snapshot.val();
       const list: Entry[] = [];
-
       for (const id in data) {
         const entry = data[id];
         const score = Number(entry?.score);
-        if (!isNaN(score)) {
-          list.push({ id, score });
-        }
+        if (!isNaN(score)) list.push({ id, score });
       }
-
       list.sort((a, b) => b.score - a.score);
       setEntries(list);
     });
@@ -58,10 +51,7 @@ export default function Admin() {
       }
     });
 
-    // 대기자 실시간 구독
     const unsub1 = subscribeToWaitingParticipants(setWaitingIds);
-
-    // 현재 문제 제출자 실시간 구독
     const unsub2 = subscribeToSubmissions(questionIndex, setSubmittedIds);
 
     return () => {
@@ -76,6 +66,35 @@ export default function Admin() {
     }
   };
 
+  const downloadResponsesCSV = async () => {
+    const snapshot = await get(ref(db, 'responses'));
+    const data = snapshot.val();
+    if (!data) return alert('응답 데이터가 없습니다.');
+
+    const headers = ['ID', 'Score', 'Timestamp', ...QUESTIONS.map(q => q.id)];
+    const rows = Object.entries(data).map(([id, entry]: any) => {
+      return [
+        id,
+        entry.score ?? '',
+        new Date(entry.timestamp).toLocaleString(),
+        ...QUESTIONS.map(q => entry.answers?.[q.id] ?? '')
+      ];
+    });
+
+    const csv = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `quiz_responses_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   if (!authenticated) {
     return (
       <div style={{ padding: 20 }}>
@@ -87,11 +106,8 @@ export default function Admin() {
           onChange={e => setInput(e.target.value)}
         />
         <button onClick={() => {
-          if (input === ADMIN_PASSWORD) {
-            setAuthenticated(true);
-          } else {
-            alert("비밀번호가 틀렸습니다.");
-          }
+          if (input === ADMIN_PASSWORD) setAuthenticated(true);
+          else alert("비밀번호가 틀렸습니다.");
         }}>
           로그인
         </button>
@@ -108,14 +124,23 @@ export default function Admin() {
         <button onClick={() => setQuizState({ status: 'started', currentQuestion: 0 })}>
           퀴즈 시작
         </button>{' '}
+
         {questionIndex < QUESTIONS.length - 1 && (
-          <button onClick={() => setQuizState({ status: 'started', currentQuestion: questionIndex + 1 })}>
+          <button onClick={() =>
+            setQuizState({ status: 'started', currentQuestion: questionIndex + 1 })
+          }>
             다음 문제
           </button>
         )}{' '}
+
         <button onClick={() => setQuizState({ status: 'finished', currentQuestion: 0 })}>
           퀴즈 종료
-        </button>
+        </button>{' '}
+
+        <button onClick={downloadResponsesCSV}>
+          📥 응답 CSV 다운로드
+        </button>{' '}
+
         <button
           style={{ marginLeft: 20, color: 'red' }}
           onClick={() => {
