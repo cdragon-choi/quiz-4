@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { QUESTIONS } from './questions';
 import { saveResponse } from './firebase';
+import Admin from './Admin';
 
 function calculateScore(answers: Record<string, string>) {
   return QUESTIONS.reduce((total, q) => {
@@ -62,6 +63,7 @@ export default function App() {
       >
         제출
       </button>
+      <button onClick={() => window.location.href = '/admin'}>관리자 보기</button>
     </div>
   );
 }
