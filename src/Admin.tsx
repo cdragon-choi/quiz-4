@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import { db, setQuizState, deleteResponse } from './firebase';
+import {
+  db,
+  setQuizState,
+  deleteResponse,
+  subscribeToWaitingParticipants,
+  subscribeToSubmissions,
+} from './firebase';
 import { onValue, ref } from 'firebase/database';
 
 type Entry = {
@@ -15,6 +21,8 @@ export default function Admin() {
   const [input, setInput] = useState('');
   const [status, setStatus] = useState('idle');
   const [questionIndex, setQuestionIndex] = useState(0);
+  const [waitingIds, setWaitingIds] = useState<string[]>([]);
+  const [submittedIds, setSubmittedIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!authenticated) return;
@@ -44,7 +52,15 @@ export default function Admin() {
         setQuestionIndex(state.currentQuestion);
       }
     });
-  }, [authenticated]);
+
+    const unsubWait = subscribeToWaitingParticipants(setWaitingIds);
+    const unsubSub = subscribeToSubmissions(questionIndex, setSubmittedIds);
+
+    return () => {
+      unsubWait();
+      unsubSub();
+    };
+  }, [authenticated, questionIndex]);
 
   const handleDelete = (id: string) => {
     if (confirm(`정말로 ${id} 응답을 삭제하시겠습니까?`)) {
@@ -92,6 +108,17 @@ export default function Admin() {
         </button>
       </div>
 
+      <h3>🟦 대기 중 참가자 ({waitingIds.length})</h3>
+      <ul>
+        {waitingIds.map(id => <li key={id}>{id}</li>)}
+      </ul>
+
+      <h3>🟩 현재 문제 제출자 ({submittedIds.length})</h3>
+      <ul>
+        {submittedIds.map(id => <li key={id}>{id}</li>)}
+      </ul>
+
+      <h3>🏆 최종 제출 점수</h3>
       {entries.length === 0 ? (
         <p>아직 제출된 응답이 없습니다.</p>
       ) : (
