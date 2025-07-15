@@ -92,24 +92,24 @@ export default function App() {
     );
   }
 
+  // 상태: 시작됨인데 이미 제출함
+  if (status === 'started' && existingScore !== null) {
+    return (
+      <div style={{ padding: 20 }}>
+        <h1>2025 R2 SmartThings 퀴즈</h1>
+        <p>✅ 이미 제출하셨습니다. 점수: <b>{existingScore}</b>점</p>
+      </div>
+    );
+  }
+
   // 상태: 시작됨인데 ID 입력 안함
-  if (!id) {
+  if (status === 'started' && !id) {
     return (
       <div style={{ padding: 20 }}>
         <h1>2025 R2 SmartThings 퀴즈</h1>
         <p>사내 고유 ID를 입력하고 시작하세요.</p>
         <input value={id} onChange={e => setId(e.target.value)} />
         <button onClick={handleIdCheck}>시작</button>
-      </div>
-    );
-  }
-
-  // 상태: 시작됨인데 이미 제출함
-  if (existingScore !== null) {
-    return (
-      <div style={{ padding: 20 }}>
-        <h1>2025 R2 SmartThings 퀴즈</h1>
-        <p>✅ 이미 제출하셨습니다. 점수: <b>{existingScore}</b>점</p>
       </div>
     );
   }
