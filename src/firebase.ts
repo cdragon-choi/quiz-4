@@ -23,6 +23,13 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
 
+// 🔐 점수 로딩
+export const getCorrectAnswers = async(): Promise<Record<string,
+  string>> => {
+  const snapshot = await get(ref(db, 'correctAnswers'));
+  return snapshot.val() || {};
+};
+
 // 🔐 점수 저장
 export const saveResponse = (
   id: string,
@@ -82,19 +89,15 @@ export const subscribeToWaitingParticipants = (
   });
 };
 
-// ✅ 문제별 제출 기록 + 채점 결과 저장
+// ✅ 문제별 제출 기록 (정답 여부 포함)
 export const markSubmission = async (
   id: string,
   qIndex: number,
-  answer: string
+  correct: boolean
 ) => {
-  const q = QUESTIONS[qIndex];
-  const isCorrect = String(q.answer) === answer;
-
   return set(ref(db, `submissions/${qIndex}/${id}`), {
+    correct,
     timestamp: Date.now(),
-    correct: isCorrect,
-    answer,
   });
 };
 
