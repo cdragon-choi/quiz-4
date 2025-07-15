@@ -1,4 +1,3 @@
-// src/firebase.ts
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, set } from "firebase/database";
 
@@ -14,9 +13,13 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
-export const saveResponse = (id: string, answers: any) => {
+export const saveResponse = (
+  id: string,
+  { answers, score }: { answers: any; score: number }
+) => {
   return set(ref(db, 'responses/' + id), {
     timestamp: Date.now(),
     answers,
+    score,
   });
 };
