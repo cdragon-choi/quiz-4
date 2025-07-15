@@ -7,6 +7,8 @@ import {
   subscribeToSubmissions,
   resetAllData,
   getAccuracyStats,
+  getCorrectAnswers,
+  setCorrectAnswers,
 } from './firebase';
 import { onValue, ref, get } from 'firebase/database';
 import { QUESTIONS } from './questions';
@@ -34,6 +36,7 @@ export default function Admin() {
   const [waitingIds, setWaitingIds] = useState<string[]>([]);
   const [submittedIds, setSubmittedIds] = useState<string[]>([]);
   const [accuracyStats, setAccuracyStats] = useState<Accuracy[]>([]);
+  const [correctAnswers, setCorrectAnswersState] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!authenticated) return;
@@ -64,6 +67,7 @@ export default function Admin() {
     const unsub2 = subscribeToSubmissions(questionIndex, setSubmittedIds);
 
     getAccuracyStats().then(setAccuracyStats);
+    getCorrectAnswers().then(setCorrectAnswersState);
 
     return () => {
       unsub1();
@@ -104,6 +108,13 @@ export default function Admin() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+  };
+
+  const handleSetCorrect = async (qid: string, answer: string) => {
+    const updated = { ...correctAnswers, [qid]: answer };
+    await setCorrectAnswers(updated);
+    setCorrectAnswersState(updated);
+    alert(`:white_check_mark: ${qid} 정답이 저장되었습니다.`);
   };
 
   if (!authenticated) {
@@ -167,6 +178,48 @@ export default function Admin() {
         </button>
       </div>
 
+      <h3>:test_tube: 문제별 정답 입력</h3>
+      <table border={1} cellPadding={8}>
+        <thead>
+          <tr>
+            <th>문제</th>
+            <th>정답 보기 선택</th>
+            <th>현재 저장된 정답</th>
+            <th>설정</th>
+          </tr>
+        </thead>
+        <tbody>
+          {QUESTIONS.map((q, idx) => (
+            <tr key={q.id}>
+              <td>{idx + 1}. {q.text}</td>
+              <td>
+                <select
+                  value={correctAnswers[q.id] ?? ''}
+                  onChange={e => handleSetCorrect(q.id, e.target.value)}
+                >
+                  <option value="">선택</option>
+                  {q.options.map((opt, i) => (
+                    <option key={i} value={String(i)}>{opt}</option>
+                  ))}
+                </select>
+              </td>
+              <td>
+                {correctAnswers[q.id] !== undefined
+                  ? q.options[Number(correctAnswers[q.id])] ?? '(?)'
+                  : '(미지정)'}
+              </td>
+              <td>
+                <button onClick={() =>
+                  handleSetCorrect(q.id, correctAnswers[q.id] ?? '')
+                }>
+                  저장
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
       <h3>:bar_chart: 문제별 정답률</h3>
       <table border={1} cellPadding={8}>
         <thead>
@@ -189,7 +242,7 @@ export default function Admin() {
         </tbody>
       </table>
 
-      <h3>:standing_person: 대기 중 참가자 ({waitingIds.length}명)</h3>
+      <h3>:raising_hand: 대기 중 참가자 ({waitingIds.length}명)</h3>
       <ul>
         {waitingIds.map(id => <li key={id}>{id}</li>)}
       </ul>
