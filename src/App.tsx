@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { QUESTIONS } from './questions';
 import { saveResponse, checkIdExists } from './firebase';
+import Admin from './Admin';
 
 function calculateScore(answers: Record<string, string>) {
   return QUESTIONS.reduce((total, q) => {
@@ -13,6 +14,10 @@ function calculateScore(answers: Record<string, string>) {
 }
 
 export default function App() {
+  if (window.location.pathname === '/admin') {
+    return <Admin />;
+  }
+
   const [id, setId] = useState('');
   const [started, setStarted] = useState(false);
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
