@@ -18,6 +18,9 @@ export default function App() {
   const [started, setStarted] = useState(false);
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
 
+  if (typeof window !== 'undefined' && window.location.pathname === '/admin') {
+    return <Admin />;
+  }
   if (!started) {
     return (
       <div style={{ padding: 20 }}>
