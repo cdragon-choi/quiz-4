@@ -9,6 +9,7 @@ import {
 } from './firebase';
 import { onValue, ref } from 'firebase/database';
 import { QUESTIONS } from './questions';
+import { resetAllData } from './firebase';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
 
