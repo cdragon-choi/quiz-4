@@ -40,6 +40,7 @@ export default function App() {
       ))}
       <button
         onClick={() => {
+          console.log("제출");
           if (!id) return alert('ID가 없습니다');
           saveResponse(id, answers)
             .then(() => alert('응답이 저장되었습니다!'))
