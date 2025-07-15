@@ -98,3 +98,11 @@ export const subscribeToSubmissions = (
     callback(Object.keys(data));
   });
 };
+
+// 🔥 전체 데이터 초기화
+export const resetAllData = async () => {
+  const paths = ['responses', 'waitingParticipants', 'submissions', 'quizState'];
+  const promises = paths.map((path) => remove(ref(db, path)));
+  return Promise.all(promises);
+};
+
