@@ -1,4 +1,12 @@
-export const QUESTIONS = [
+export type Question = {
+  id: string;               // 고유한 문제 ID (예: 'q1', 'q2')
+  text: string;             // 문제 내용
+  options: string[];        // 보기 (선택지)
+  answer: number;           // 정답의 인덱스 (예: 0, 1, 2, ...)
+  score: number;            // 이 문제의 점수
+};
+
+export const QUESTIONS: Question[] = [
   {
     id: 'q1',
     text: '다음 중 2025 R2 신규 추가 기능이 아닌 한 가지는?',
