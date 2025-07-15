@@ -113,7 +113,7 @@ export default function Admin() {
             다음 문제
           </button>
         )}{' '}
-        <button onClick={() => setQuizState({ status: 'finished', currentQuestion: questionIndex })}>
+        <button onClick={() => setQuizState({ status: 'finished', currentQuestion: 0 })}>
           퀴즈 종료
         </button>
         <button
