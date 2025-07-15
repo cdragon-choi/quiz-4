@@ -1,4 +1,3 @@
-// src/firebase.ts
 import { initializeApp } from "firebase/app";
 import {
   getDatabase,
@@ -23,38 +22,21 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
 
-// 🔐 점수 로딩
-export const getCorrectAnswers = async(): Promise<Record<string,
-  string>> => {
-  const snapshot = await get(ref(db, 'correctAnswers'));
-  return snapshot.val() || {};
-};
-
-// 🔐 점수 저장
-export const saveResponse = (
-  id: string,
-  { answers, score }: { answers: any; score: number }
-) => {
-  return set(ref(db, "responses/" + id), {
-    timestamp: Date.now(),
-    answers,
-    score,
-  });
-};
-
-// ✅ ID 존재 여부 확인
+// :white_check_mark: ID 존재 여부 확인
 export const checkIdExists = async (id: string) => {
   const snapshot = await get(ref(db, "responses/" + id));
   if (!snapshot.exists()) return null;
   return snapshot.val();
 };
 
-// 🧹 응답 삭제
-export const deleteResponse = (id: string) => {
-  return remove(ref(db, "responses/" + id));
+// :memo: 대기자 등록
+export const addWaitingParticipant = (id: string) => {
+  return set(ref(db, "waitingParticipants/" + id), {
+    timestamp: Date.now(),
+  });
 };
 
-// 🟩 퀴즈 상태 설정
+// :large_green_square: 퀴즈 상태 설정
 export const setQuizState = (state: {
   status: "idle" | "started" | "finished";
   currentQuestion: number;
@@ -62,7 +44,7 @@ export const setQuizState = (state: {
   return set(ref(db, "quizState"), state);
 };
 
-// 📡 퀴즈 상태 실시간 구독
+// :satellite_antenna: 퀴즈 상태 실시간 구독
 export const subscribeToQuizState = (
   callback: (state: { status: string; currentQuestion: number }) => void
 ) => {
@@ -72,14 +54,7 @@ export const subscribeToQuizState = (
   });
 };
 
-// 📝 대기자 등록
-export const addWaitingParticipant = (id: string) => {
-  return set(ref(db, "waitingParticipants/" + id), {
-    timestamp: Date.now(),
-  });
-};
-
-// 👀 대기자 실시간 구독
+// :eyes: 대기자 실시간 구독
 export const subscribeToWaitingParticipants = (
   callback: (ids: string[]) => void
 ) => {
@@ -89,19 +64,19 @@ export const subscribeToWaitingParticipants = (
   });
 };
 
-// ✅ 문제별 제출 기록 (정답 여부 포함)
+// :white_check_mark: 문제별 제출 기록 저장 (답안 포함)
 export const markSubmission = async (
   id: string,
   qIndex: number,
-  correct: boolean
+  selected: string
 ) => {
   return set(ref(db, `submissions/${qIndex}/${id}`), {
-    correct,
+    selected,
     timestamp: Date.now(),
   });
 };
 
-// 👀 문제별 제출자 실시간 구독
+// :eyes: 문제별 제출자 실시간 구독
 export const subscribeToSubmissions = (
   qIndex: number,
   callback: (ids: string[]) => void
@@ -112,23 +87,39 @@ export const subscribeToSubmissions = (
   });
 };
 
-// 📊 문제별 정확도 통계 구하기
+// :brain: 점수 계산 및 저장
+export const submitAnswerAndScore = async (id: string): Promise<number> => {
+  let score = 0;
+
+  for (let i = 0; i < QUESTIONS.length; i++) {
+    const q = QUESTIONS[i];
+    const snap = await get(ref(db, `submissions/${i}/${id}`));
+    const answer = snap.val()?.selected;
+    if (answer !== undefined && String(q.answer) === String(answer)) {
+      score += q.score;
+    }
+  }
+
+  await set(ref(db, `responses/${id}`), {
+    score,
+    timestamp: Date.now(),
+  });
+
+  return score;
+};
+
+// 📊 문제별 정확도 통계
 export const getAccuracyStats = async (): Promise<
   { qIndex: number; total: number; correct: number; rate: number }[]
 > => {
-  const results: {
-    qIndex: number;
-    total: number;
-    correct: number;
-    rate: number;
-  }[] = [];
+  const results = [];
 
   for (let i = 0; i < QUESTIONS.length; i++) {
     const snap = await get(ref(db, `submissions/${i}`));
     const data = snap.val() || {};
     const ids = Object.keys(data);
     const total = ids.length;
-    const correct = ids.filter((id) => data[id]?.correct === true).length;
+    const correct = ids.filter((id) => String(data[id]?.selected) === String(QUESTIONS[i].answer)).length;
     const rate = total === 0 ? 0 : Math.round((correct / total) * 100);
     results.push({ qIndex: i, total, correct, rate });
   }
@@ -136,7 +127,12 @@ export const getAccuracyStats = async (): Promise<
   return results;
 };
 
-// 🔥 전체 데이터 초기화
+// :broom: 응답 삭제
+export const deleteResponse = (id: string) => {
+  return remove(ref(db, "responses/" + id));
+};
+
+// :fire: 전체 데이터 초기화
 export const resetAllData = async () => {
   const paths = ['responses', 'waitingParticipants', 'submissions', 'quizState'];
   const promises = paths.map((path) => remove(ref(db, path)));
