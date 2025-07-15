@@ -1,4 +1,3 @@
-// src/Admin.tsx
 import { useEffect, useState } from 'react';
 import { db } from './firebase';
 import { onValue, ref } from 'firebase/database';
@@ -19,7 +18,7 @@ export default function Admin() {
 
       for (const id in data) {
         const entry = data[id];
-        if (entry.score !== undefined) {
+        if (entry && typeof entry.score === 'number') {
           list.push({ id, score: entry.score });
         }
       }
@@ -32,19 +31,28 @@ export default function Admin() {
   return (
     <div style={{ padding: 20 }}>
       <h2>🧑‍💼 관리자 리더보드</h2>
-      <table>
-        <thead>
-          <tr><th>참가자 ID</th><th>점수</th></tr>
-        </thead>
-        <tbody>
-          {entries.map((e, idx) => (
-            <tr key={e.id}>
-              <td>{e.id}</td>
-              <td>{e.score}</td>
+      {entries.length === 0 ? (
+        <p>아직 제출된 응답이 없습니다.</p>
+      ) : (
+        <table border={1} cellPadding={10}>
+          <thead>
+            <tr>
+              <th>순위</th>
+              <th>참가자 ID</th>
+              <th>점수</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {entries.map((e, idx) => (
+              <tr key={e.id}>
+                <td>{idx + 1}</td>
+                <td>{e.id}</td>
+                <td>{e.score}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
