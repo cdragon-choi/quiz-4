@@ -31,6 +31,7 @@ export default function App() {
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
   const [submittedQuestions, setSubmittedQuestions] = useState<Set<number>>(new Set());
 
+  // 실시간 퀴즈 상태 반영
   useEffect(() => {
     const unsubscribe = subscribeToQuizState((state) => {
       if (state) {
@@ -54,7 +55,7 @@ export default function App() {
     }
   };
 
-  // 기존 ID면 항상 점수만 보여줌
+  // 기존 응답자면 항상 점수만 보여줌
   if (isExisting) {
     return (
       <div style={{ padding: 20 }}>
@@ -64,7 +65,7 @@ export default function App() {
     );
   }
 
-  // ID 아직 입력 전
+  // 아직 ID 입력 전
   if (!idConfirmed) {
     return (
       <div style={{ padding: 20 }}>
@@ -127,10 +128,27 @@ export default function App() {
       {!hasSubmitted && (
         <button
           onClick={async () => {
-            if (!selected) return alert("답안을 선택하세요.");
+            if (!selected) {
+              alert("답안을 선택하세요.");
+              return;
+            }
+
+            // 기록
+            const newSubmitted = new Set(submittedQuestions).add(currentQuestion);
+            setSubmittedQuestions(newSubmitted);
             await markSubmission(id, currentQuestion);
-            setSubmittedQuestions(new Set(submittedQuestions).add(currentQuestion));
-            alert("제출 완료!");
+
+            // 마지막 문제 → 점수 저장 및 종료
+            if (currentQuestion === QUESTIONS.length - 1) {
+              const updatedAnswers = { ...answers, [q.id]: selected };
+              const score = calculateScore(updatedAnswers);
+              await saveResponse(id, { answers: updatedAnswers, score });
+              setExistingScore(score);
+              alert(`제출 완료! 당신의 점수는 ${score}점입니다.`);
+              setIsExisting(true); // 다시 문제 화면 못 보게 함
+            } else {
+              alert("제출 완료!");
+            }
           }}
         >
           현재 문제 제출
@@ -138,23 +156,6 @@ export default function App() {
       )}
 
       {hasSubmitted && <p style={{ color: 'green' }}>✅ 제출 완료</p>}
-
-      {currentQuestion === QUESTIONS.length - 1 && (
-        <button
-          style={{ marginTop: 20 }}
-          onClick={() => {
-            const score = calculateScore(answers);
-            saveResponse(id, { answers, score })
-              .then(() => {
-                alert(`제출 완료! 당신의 점수는 ${score}점입니다.`);
-                window.location.reload();
-              })
-              .catch((err) => alert('저장 실패: ' + err.message));
-          }}
-        >
-          전체 제출 및 종료
-        </button>
-      )}
     </div>
   );
 }
