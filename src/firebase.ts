@@ -8,6 +8,7 @@ import {
   remove,
   onValue,
 } from "firebase/database";
+import { QUESTIONS } from "./questions";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -81,10 +82,19 @@ export const subscribeToWaitingParticipants = (
   });
 };
 
-// ✅ 문제별 제출 기록
-export const markSubmission = (id: string, qIndex: number) => {
+// ✅ 문제별 제출 기록 + 채점 결과 저장
+export const markSubmission = async (
+  id: string,
+  qIndex: number,
+  answer: string
+) => {
+  const q = QUESTIONS[qIndex];
+  const isCorrect = String(q.answer) === answer;
+
   return set(ref(db, `submissions/${qIndex}/${id}`), {
     timestamp: Date.now(),
+    correct: isCorrect,
+    answer,
   });
 };
 
@@ -99,10 +109,33 @@ export const subscribeToSubmissions = (
   });
 };
 
+// 📊 문제별 정확도 통계 구하기
+export const getAccuracyStats = async (): Promise<
+  { qIndex: number; total: number; correct: number; rate: number }[]
+> => {
+  const results: {
+    qIndex: number;
+    total: number;
+    correct: number;
+    rate: number;
+  }[] = [];
+
+  for (let i = 0; i < QUESTIONS.length; i++) {
+    const snap = await get(ref(db, `submissions/${i}`));
+    const data = snap.val() || {};
+    const ids = Object.keys(data);
+    const total = ids.length;
+    const correct = ids.filter((id) => data[id]?.correct === true).length;
+    const rate = total === 0 ? 0 : Math.round((correct / total) * 100);
+    results.push({ qIndex: i, total, correct, rate });
+  }
+
+  return results;
+};
+
 // 🔥 전체 데이터 초기화
 export const resetAllData = async () => {
   const paths = ['responses', 'waitingParticipants', 'submissions', 'quizState'];
   const promises = paths.map((path) => remove(ref(db, path)));
   return Promise.all(promises);
 };
-
