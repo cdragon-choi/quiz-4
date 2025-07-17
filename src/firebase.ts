@@ -22,32 +22,32 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
 
-// :white_check_mark: 정답 저장 (Admin용)
+// ✅ 정답 저장 (Admin용)
 export const setCorrectAnswers = async (answers: Record<string, string>) => {
   return set(ref(db, "correctAnswers"), answers);
 };
 
-// :white_check_mark: 정답 로딩
+// ✅ 정답 로딩
 export const getCorrectAnswers = async (): Promise<Record<string, string>> => {
   const snap = await get(ref(db, "correctAnswers"));
   return snap.val() || {};
 };
 
-// :white_check_mark: ID 존재 여부 확인
+// ✅ ID 존재 여부 확인
 export const checkIdExists = async (id: string) => {
   const snapshot = await get(ref(db, "responses/" + id));
   if (!snapshot.exists()) return null;
   return snapshot.val();
 };
 
-// :memo: 대기자 등록
+// 📝 대기자 등록
 export const addWaitingParticipant = (id: string) => {
   return set(ref(db, "waitingParticipants/" + id), {
     timestamp: Date.now(),
   });
 };
 
-// :large_green_square: 퀴즈 상태 설정
+// 🔷 퀴즈 상태 설정
 export const setQuizState = (state: {
   status: "idle" | "started" | "finished";
   currentQuestion: number;
@@ -55,7 +55,7 @@ export const setQuizState = (state: {
   return set(ref(db, "quizState"), state);
 };
 
-// :satellite_antenna: 퀴즈 상태 실시간 구독
+// 📡 퀴즈 상태 실시간 구독
 export const subscribeToQuizState = (
   callback: (state: { status: string; currentQuestion: number }) => void
 ) => {
@@ -65,7 +65,7 @@ export const subscribeToQuizState = (
   });
 };
 
-// :eyes: 대기자 실시간 구독
+// 👀 대기자 실시간 구독
 export const subscribeToWaitingParticipants = (
   callback: (ids: string[]) => void
 ) => {
@@ -75,7 +75,7 @@ export const subscribeToWaitingParticipants = (
   });
 };
 
-// :white_check_mark: 문제별 제출 기록 저장 (답안 포함)
+// ✅ 문제별 제출 기록 저장 (답안 포함)
 export const markSubmission = async (
   id: string,
   qIndex: number,
@@ -87,7 +87,7 @@ export const markSubmission = async (
   });
 };
 
-// :eyes: 문제별 제출자 실시간 구독
+// 👀 문제별 제출자 실시간 구독
 export const subscribeToSubmissions = (
   qIndex: number,
   callback: (ids: string[]) => void
@@ -98,7 +98,7 @@ export const subscribeToSubmissions = (
   });
 };
 
-// :brain: 점수 계산 및 저장
+// 🧠 점수 계산 및 저장
 export const submitAnswerAndScore = async (id: string): Promise<number> => {
   const correctAnswers = await getCorrectAnswers();
   let score = 0;
