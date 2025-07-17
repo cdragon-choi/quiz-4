@@ -9,6 +9,7 @@ import {
 } from './firebase';
 import Admin from './Admin';
 
+
 export default function App() {
   if (window.location.pathname === '/admin') return <Admin />;
 

@@ -38,6 +38,7 @@ export default function Admin() {
   const [accuracyStats, setAccuracyStats] = useState<Accuracy[]>([]);
   const [correctAnswers, setCorrectAnswersState] = useState<Record<string, string>>({});
 
+  
   useEffect(() => {
     if (!authenticated) return;
 
