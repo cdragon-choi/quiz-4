@@ -19,16 +19,16 @@ export default function App() {
   const [existingScore, setExistingScore] = useState<number | null>(null);
   const [status, setStatus] = useState<'idle' | 'started' | 'finished'>('idle');
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
   const [submittedQuestions, setSubmittedQuestions] = useState<Set<number>>(new Set());
 
   // 실시간 퀴즈 상태 반영
   useEffect(() => {
     const unsubscribe = subscribeToQuizState((state) => {
       if (state) {
-        setStatus(state.status);
+        setStatus(state.status as 'idle' | 'started' | 'finished');
         setCurrentQuestion(state.currentQuestion);
-        setSelected(null);
+        setSelected([]);
       }
     });
     return () => unsubscribe();
@@ -100,11 +100,20 @@ export default function App() {
         {q.options.map((opt, idx) => (
           <label key={idx} style={{ display: 'block' }}>
             <input
-              type="radio"
+              type="checkbox"
               name={q.id}
               value={String(idx)}
-              checked={selected === String(idx)}
-              onChange={() => setSelected(String(idx))}
+              checked={selected.includes(String(idx))}
+              onChange={(e) => {
+  const updated = [...selected];
+  if (e.target.checked) {
+    if (!updated.includes(String(idx))) updated.push(String(idx));
+  } else {
+    const index = updated.indexOf(String(idx));
+    if (index > -1) updated.splice(index, 1);
+  }
+  setSelected(updated);
+}}
               disabled={hasSubmitted}
             />
             {opt}
@@ -115,7 +124,7 @@ export default function App() {
       {!hasSubmitted && (
         <button
           onClick={async () => {
-            if (!selected) {
+            if (!selected || selected.length === 0) {
               alert("답안을 선택하세요.");
               return;
             }

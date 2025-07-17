@@ -24,12 +24,12 @@ const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
 
 // ✅ 정답 저장 (Admin용)
-export const setCorrectAnswers = async (answers: Record<string, string>) => {
+export const setCorrectAnswers = async (answers: Record<string, string[]>) => {
   return set(ref(db, "correctAnswers"), answers);
 };
 
 // ✅ 정답 로딩
-export const getCorrectAnswers = async (): Promise<Record<string, string>> => {
+export const getCorrectAnswers = async (): Promise<Record<string, string[]>> => {
   const snap = await get(ref(db, "correctAnswers"));
   return snap.val() || {};
 };
@@ -80,7 +80,7 @@ export const subscribeToWaitingParticipants = (
 export const markSubmission = async (
   id: string,
   qIndex: number,
-  selected: string
+  selected: string[]
 ) => {
   return set(ref(db, `submissions/${qIndex}/${id}`), {
     selected,
@@ -109,7 +109,7 @@ export const submitAnswerAndScore = async (id: string): Promise<number> => {
     const qid = q.id;
     const snap = await get(ref(db, `submissions/${i}/${id}`));
     const selected = snap.val()?.selected;
-    if (selected !== undefined && String(correctAnswers[qid]) === String(selected)) {
+    if (selected !== undefined && Array.isArray(selected) && Array.isArray(correctAnswers[qid]) && selected.length === correctAnswers[qid].length && correctAnswers[qid].every((ans: string) => selected.includes(ans))) {
       score += q.score;
     }
   }
@@ -136,7 +136,7 @@ export const getAccuracyStats = async (): Promise<
     const data = snap.val() || {};
     const ids = Object.keys(data);
     const total = ids.length;
-    const correct = ids.filter((id) => String(data[id]?.selected) === String(correctAnswers[qid])).length;
+    const correct = ids.filter((id) => Array.isArray(data[id]?.selected) && Array.isArray(correctAnswers[qid]) && data[id].selected.length === correctAnswers[qid].length && correctAnswers[qid].every((ans: string) => data[id].selected.includes(ans))).length;
     const rate = total === 0 ? 0 : Math.round((correct / total) * 100);
     results.push({ qIndex: i, total, correct, rate });
   }

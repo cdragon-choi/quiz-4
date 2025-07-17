@@ -36,7 +36,7 @@ export default function Admin() {
   const [waitingIds, setWaitingIds] = useState<string[]>([]);
   const [submittedIds, setSubmittedIds] = useState<string[]>([]);
   const [accuracyStats, setAccuracyStats] = useState<Accuracy[]>([]);
-  const [correctAnswers, setCorrectAnswersState] = useState<Record<string, string>>({});
+  const [correctAnswers, setCorrectAnswersState] = useState<Record<string, string[]>>({});
 
   
   useEffect(() => {
@@ -111,7 +111,7 @@ export default function Admin() {
     document.body.removeChild(a);
   };
 
-  const handleSetCorrect = async (qid: string, answer: string) => {
+  const handleSetCorrect = async (qid: string, answer: string[]) => {
     const updated = { ...correctAnswers, [qid]: answer };
     await setCorrectAnswers(updated);
     setCorrectAnswersState(updated);
@@ -194,20 +194,29 @@ export default function Admin() {
             <tr key={q.id}>
               <td>{idx + 1}. {q.text}</td>
               <td>
-                <select
-                  value={correctAnswers[q.id] ?? ''}
-                  onChange={e => handleSetCorrect(q.id, e.target.value)}
-                >
-                  <option value="">선택</option>
-                  {q.options.map((opt, i) => (
-                    <option key={i} value={String(i)}>{opt}</option>
-                  ))}
-                </select>
+                {q.options.map((opt, i) => (
+                  <label key={i} style={{ display: 'block' }}>
+                    <input
+                      type="checkbox"
+                      value={String(i)}
+                      checked={correctAnswers[q.id]?.includes(String(i)) || false}
+                      onChange={(e) => {
+                        const updated = correctAnswers[q.id] ? [...correctAnswers[q.id]] : [];
+                        if (e.target.checked) {
+                          if (!updated.includes(e.target.value)) updated.push(e.target.value);
+                        } else {
+                          const idx = updated.indexOf(e.target.value);
+                          if (idx > -1) updated.splice(idx, 1);
+                        }
+                        handleSetCorrect(q.id, updated);
+                      }}
+                    />
+                    {opt}
+                  </label>
+              ))}
               </td>
               <td>
-                {correctAnswers[q.id] !== undefined
-                  ? q.options[Number(correctAnswers[q.id])] ?? '(?)'
-                  : '(미지정)'}
+                {Array.isArray(correctAnswers[q.id]) ? correctAnswers[q.id].map(a => q.options[Number(a)]).join(", ") : '(미지정)'}
               </td>
               <td>
                 <button onClick={() =>
