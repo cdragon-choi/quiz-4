@@ -50,7 +50,7 @@ export default function App() {
     return (
       <div style={{ padding: 20 }}>
         <h1>2025 R2 SmartThings 퀴즈</h1>
-        <p>:white_check_mark: 이미 제출하셨습니다. 점수: <b>{existingScore}</b>점</p>
+        <p>✅ 이미 제출하셨습니다. 점수: <b>{existingScore}</b>점</p>
       </div>
     );
   }
@@ -69,7 +69,7 @@ export default function App() {
   if (status === 'idle') {
     return (
       <div style={{ padding: 20 }}>
-        <h1>:hourglass_flowing_sand: 퀴즈 대기 중</h1>
+        <h1>⏳ 퀴즈 대기 중</h1>
         <p>ID: <b>{id}</b></p>
         <p>관리자가 퀴즈를 시작할 때까지 기다려주세요.</p>
       </div>
@@ -137,7 +137,7 @@ export default function App() {
         </button>
       )}
 
-      {hasSubmitted && <p style={{ color: 'green' }}>:white_check_mark: 제출 완료</p>}
+      {hasSubmitted && <p style={{ color: 'green' }}>✅ 제출 완료</p>}
     </div>
   );
 }

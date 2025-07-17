@@ -143,12 +143,12 @@ export const getAccuracyStats = async (): Promise<
   return results;
 };
 
-// :broom: 응답 삭제
+// 🧹 응답 삭제
 export const deleteResponse = (id: string) => {
   return remove(ref(db, "responses/" + id));
 };
 
-// :fire: 전체 초기화
+// 🔥 전체 초기화
 export const resetAllData = async () => {
   const paths = [
     "responses",

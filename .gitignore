@@ -1,0 +1,37 @@
+# 📦 Node modules (다시 설치 가능)
+node_modules/
+
+# 🛠 빌드 아티팩트 (로컬 테스트 용)
+dist/
+build/
+
+# 🔧 로그 파일 및 캐시
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+*.log
+.vite/deps
+.cache/
+*.tgz
+
+# 🤖 IDE 설정 및 OS 임시 파일
+.vscode/
+.idea/
+.DS_Store
+*.suo *.ntvs* *.njsproj *.sln *.sw?
+
+# 🧪 테스트 관련
+coverage/
+*.lcov
+
+# 🧾 환경변수 파일 (시크릿 제외, 예시는 추적되도록 유지)
+.env
+.env.*
+!.env.example
+
+# ⚙ Firebase CLI 관련 (자동생성, 트래킹 필요 없음)
+.firebase/
+
+# 🔌 라이브러리 잠금 파일 (좋은 경우 체크인 권장)
+# package-lock.json
+# yarn.lock

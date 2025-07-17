@@ -114,7 +114,7 @@ export default function Admin() {
     const updated = { ...correctAnswers, [qid]: answer };
     await setCorrectAnswers(updated);
     setCorrectAnswersState(updated);
-    alert(`:white_check_mark: ${qid} 정답이 저장되었습니다.`);
+    alert(`✅ ${qid} 정답이 저장되었습니다.`);
   };
 
   if (!authenticated) {
@@ -139,7 +139,7 @@ export default function Admin() {
 
   return (
     <div style={{ padding: 20 }}>
-      <h2>:office_worker: 관리자 리더보드</h2>
+      <h2>👩‍💼 관리자 리더보드</h2>
       <p>상태: <b>{status}</b>, 현재 문제: <b>{questionIndex + 1}</b></p>
 
       <div style={{ marginBottom: 20 }}>
@@ -160,13 +160,13 @@ export default function Admin() {
         </button>{' '}
 
         <button onClick={downloadResponsesCSV}>
-          :inbox_tray: 응답 CSV 다운로드
+          📥 응답 CSV 다운로드
         </button>{' '}
 
         <button
           style={{ marginLeft: 20, color: 'red' }}
           onClick={() => {
-            if (confirm(":warning: 모든 데이터를 초기화할까요? 이 작업은 되돌릴 수 없습니다.")) {
+            if (confirm("⚠️ 모든 데이터를 초기화할까요? 이 작업은 되돌릴 수 없습니다.")) {
               resetAllData().then(() => {
                 alert("초기화 완료!");
                 window.location.reload();
@@ -174,11 +174,11 @@ export default function Admin() {
             }
           }}
         >
-          :fire: 전체 초기화
+          🔥 전체 초기화
         </button>
       </div>
 
-      <h3>:test_tube: 문제별 정답 입력</h3>
+      <h3>🧪 문제별 정답 입력</h3>
       <table border={1} cellPadding={8}>
         <thead>
           <tr>
@@ -220,7 +220,7 @@ export default function Admin() {
         </tbody>
       </table>
 
-      <h3>:bar_chart: 문제별 정답률</h3>
+      <h3>📊 문제별 정답률</h3>
       <table border={1} cellPadding={8}>
         <thead>
           <tr>
@@ -242,17 +242,17 @@ export default function Admin() {
         </tbody>
       </table>
 
-      <h3>:raising_hand: 대기 중 참가자 ({waitingIds.length}명)</h3>
+      <h3>🙋 대기 중 참가자 ({waitingIds.length}명)</h3>
       <ul>
         {waitingIds.map(id => <li key={id}>{id}</li>)}
       </ul>
 
-      <h3>:outbox_tray: 현재 문제 제출자 ({submittedIds.length}명)</h3>
+      <h3>📤 현재 문제 제출자 ({submittedIds.length}명)</h3>
       <ul>
         {submittedIds.map(id => <li key={id}>{id}</li>)}
       </ul>
 
-      <h3>:trophy: 리더보드</h3>
+      <h3>🏆 리더보드</h3>
       {entries.length === 0 ? (
         <p>아직 제출된 응답이 없습니다.</p>
       ) : (
