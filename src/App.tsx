@@ -1,143 +1,28 @@
-import React, { useEffect, useState } from 'react';
-import { QUESTIONS } from './questions';
-import {
-  checkIdExists,
-  subscribeToQuizState,
-  addWaitingParticipant,
-  markSubmission,
-  submitAnswerAndScore,
-} from './firebase';
-import Admin from './Admin';
+import React from "react";
+import { useQuizState } from "./hooks/useQuizState";
+import LoginView from "./views/LoginView";
+import WaitingView from "./views/WaitingView";
+import QuizView from "./views/QuizView";
+import SubmittedUI from "./views/SubmittedUI";
+import ResultView from "./views/ResultView";
 
-export default function App() {
-  if (window.location.pathname === '/admin') return <Admin />;
+const App = () => {
+  const { status } = useQuizState();
 
-  const [id, setId] = useState('');
-  const [idConfirmed, setIdConfirmed] = useState(false);
-  const [isExisting, setIsExisting] = useState(false);
-  const [existingScore, setExistingScore] = useState<number | null>(null);
-  const [status, setStatus] = useState<'idle' | 'started' | 'finished'>('idle');
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [submittedQuestions, setSubmittedQuestions] = useState<Set<number>>(new Set());
-
-  // 실시간 퀴즈 상태 반영
-  useEffect(() => {
-    const unsubscribe = subscribeToQuizState((state) => {
-      if (state) {
-        setStatus(state.status);
-        setCurrentQuestion(state.currentQuestion);
-        setSelected(null);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const handleIdSubmit = async () => {
-    if (!id) return alert('ID를 입력하세요');
-    const result = await checkIdExists(id);
-    if (result) {
-      setIsExisting(true);
-      setExistingScore(result.score ?? 0);
-    } else {
-      await addWaitingParticipant(id);
-      setIdConfirmed(true);
-      alert('참가 등록 완료! 퀴즈 시작까지 기다려주세요.');
-    }
-  };
-
-  if (isExisting) {
-    return (
-      <div style={{ padding: 20 }}>
-        <h1>2025 R2 SmartThings 퀴즈</h1>
-        <p>✅ 이미 제출하셨습니다. 점수: <b>{existingScore}</b>점</p>
-      </div>
-    );
+  switch (status) {
+    case "idle":
+      return <LoginView />;
+    case "waiting":
+      return <WaitingView />;
+    case "started":
+      return <QuizView />;
+    case "submitted":
+      return <SubmittedUI />;
+    case "finished":
+      return <ResultView />;
+    default:
+      return <div>Unknown status</div>;
   }
+};
 
-  if (!idConfirmed) {
-    return (
-      <div style={{ padding: 20 }}>
-        <h1>2025 R2 SmartThings 퀴즈</h1>
-        <p>사내 고유 ID를 입력하세요.</p>
-        <input value={id} onChange={(e) => setId(e.target.value)} />
-        <button onClick={handleIdSubmit}>확인</button>
-      </div>
-    );
-  }
-
-  if (status === 'idle') {
-    return (
-      <div style={{ padding: 20 }}>
-        <h1>⏳ 퀴즈 대기 중</h1>
-        <p>ID: <b>{id}</b></p>
-        <p>관리자가 퀴즈를 시작할 때까지 기다려주세요.</p>
-      </div>
-    );
-  }
-
-  if (status === 'finished') {
-    return (
-      <div style={{ padding: 20 }}>
-        <h1>퀴즈 종료</h1>
-        <p>응답을 제출하지 않으셨습니다.</p>
-      </div>
-    );
-  }
-
-  // 진행 중인 문제
-  const q = QUESTIONS[currentQuestion];
-  const hasSubmitted = submittedQuestions.has(currentQuestion);
-
-  return (
-    <div style={{ padding: 20 }}>
-      <h2>참가자 ID: {id}</h2>
-      <p>문제 {currentQuestion + 1} / {QUESTIONS.length}</p>
-
-      <div>
-        <p>{q.text}</p>
-        {q.options.map((opt, idx) => (
-          <label key={idx} style={{ display: 'block' }}>
-            <input
-              type="radio"
-              name={q.id}
-              value={String(idx)}
-              checked={selected === String(idx)}
-              onChange={() => setSelected(String(idx))}
-              disabled={hasSubmitted}
-            />
-            {opt}
-          </label>
-        ))}
-      </div>
-
-      {!hasSubmitted && (
-        <button
-          onClick={async () => {
-            if (!selected) {
-              alert("답안을 선택하세요.");
-              return;
-            }
-
-            // 서버에 제출
-            await markSubmission(id, currentQuestion, selected);
-            setSubmittedQuestions(new Set(submittedQuestions).add(currentQuestion));
-
-            if (currentQuestion === QUESTIONS.length - 1) {
-              const score = await submitAnswerAndScore(id);
-              setExistingScore(score);
-              alert(`제출 완료! 당신의 점수는 ${score}점입니다.`);
-              setIsExisting(true);
-            } else {
-              alert("제출 완료!");
-            }
-          }}
-        >
-          현재 문제 제출
-        </button>
-      )}
-
-      {hasSubmitted && <p style={{ color: 'green' }}>✅ 제출 완료</p>}
-    </div>
-  );
-}
+export default App;
