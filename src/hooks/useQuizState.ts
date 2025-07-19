@@ -1,15 +1,21 @@
+// src/hooks/useQuizState.ts
 import { useState } from "react";
-import { QuizStatus } from "../types/types";
+import { QuizState, QuizStatus } from "../types/types";
 
-// 초기 TDD를 위한 최소 버전
-export const useQuizState = () => {
+export const useQuizState = (): QuizState => {
   const [status, setStatus] = useState<QuizStatus>("idle");
-  const [currentQuestion, setCurrentQuestion] = useState<number>(0);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+
+  const setId = (id: string) => {
+    console.log("참가자 ID 설정:", id);
+    setStatus("waiting"); // 💡 임시로 상태 전이해도 됨 (후에 Firebase 연동 예정)
+  };
 
   return {
     status,
     currentQuestion,
-    setStatus, // 나중에 테스트/관리용으로 사용 가능
+    setStatus,
     setCurrentQuestion,
+    setId, // ✅ 추가!
   };
 };
