@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { subscribeToQuizState, subscribeToParticipantStatus, setQuizState } from "../lib/firebase";
+import { subscribeToQuizState, subscribeToParticipantStatus, incrementCurrentQuestion, setQuizState } from "../lib/firebase";
 
 const Admin = () => {
   const [quizState, setLocalQuizState] = useState({ status: "idle", currentQuestion: 0 });
@@ -15,6 +15,7 @@ const Admin = () => {
   }, []);
 
   const goToNext = () => {
+    incrementCurrentQuestion();
     setQuizState({
       status: "started",
       currentQuestion: quizState.currentQuestion + 1,
